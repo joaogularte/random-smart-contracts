@@ -31,7 +31,7 @@ contract BallotV2 {
     }
 
     modifier validChairPerson() {
-        assert(msg.sender == chairperson);
+        require(msg.sender == chairperson);
         _;
     }
 
@@ -46,8 +46,9 @@ contract BallotV2 {
         state = nextState;
     }
 
-    function register(address voter) public validChairPerson() validState(State.Regs) {
-        if (voters[voter].voted) revert();
+    function register(address voter) public validState(State.Regs) validChairPerson()  {
+        //Use if (condition) revert(); is equal to require(! condition);
+        require(!voters[voter].voted);
 
         voters[voter].weight = 1;
         voters[voter].voted = false;
@@ -55,7 +56,9 @@ contract BallotV2 {
 
     function vote(uint toProposal) public validState(State.Vote) {
         Voter memory voter = voters[msg.sender];
-        if (voter.voted || toProposal  >= proposals.length) revert();
+        require(!voter.voted);
+        require(toProposal < proposals.length);
+
         voter.voted =  true;
         voter.vote = toProposal;
         proposals[toProposal].voteCount += voter.weight;
@@ -68,5 +71,6 @@ contract BallotV2 {
                 winningVoteCount = proposals[prop].voteCount;
                 winningProposal = prop;
             }
+        assert (winningProposal >= 3);
     }
 }
